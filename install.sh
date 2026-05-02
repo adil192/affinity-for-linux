@@ -1,14 +1,16 @@
 #!/bin/bash
 
-if command -v dnf &>/dev/null; then
-  echo "Installing dependencies..."
-  sudo dnf install -y flatpak flatpak-builder
-elif command -v apt-get &>/dev/null; then
-  echo "Installing dependencies..."
-  sudo apt-get install -y flatpak flatpak-builder
-elif ! command -v flatpak-builder &>/dev/null; then
-  echo "flatpak-builder not found. Please install it and run this script again."
-  exit 1
+if ! command -v flatpak-builder &>/dev/null; then
+  if command -v dnf &>/dev/null; then
+    echo "Installing dependencies..."
+    sudo dnf install -y flatpak flatpak-builder
+  elif command -v apt-get &>/dev/null; then
+    echo "Installing dependencies..."
+    sudo apt-get install -y flatpak flatpak-builder
+  else
+    echo "flatpak-builder not found. Please install it and run this script again."
+    exit 1
+  fi
 fi
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 
