@@ -100,16 +100,13 @@ modules:
       - wget -q --force-progress "https://downloads.affinity.studio/Affinity%20x64.exe" -O AffinityInstaller.exe
       - winetricks --unattended win11
       - wine AffinityInstaller.exe
+      - test -f "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity/Affinity.exe" || exit 1
 
   - name: copy_dlls
     buildsystem: simple
     build-commands:
       - cp /app/lib/wine/x86_64-windows/d3d12*.dll ${WINEPREFIX}/drive_c/windows/system32/
       - cp /app/lib/wine/x86_64-windows/d3d12*.dll "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity/"
-    sources:
-      - type: archive
-        url: https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v2.14.1/vkd3d-proton-2.14.1.tar.zst
-        sha256: ac70ccfe01d610b51ca67a0a44e4f24f5da29c665facc0c2faf47e0818d23168
 
   - name: desktop_integration
     buildsystem: simple
