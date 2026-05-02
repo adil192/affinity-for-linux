@@ -1,4 +1,4 @@
 #!/bin/bash
 
-flatpak remove --delete-data studio.affinity.Affinity
-rm -rf .flatpak-builder builddir repo
+flatpak remove -y --delete-data studio.affinity.Affinity
+rm -rf builddir repo
