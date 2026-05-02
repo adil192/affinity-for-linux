@@ -126,4 +126,4 @@ modules:
       - type: script
         dest-filename: start_affinity.sh
         commands:
-          - wine "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity.exe"
+          - wine "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity/Affinity.exe"
