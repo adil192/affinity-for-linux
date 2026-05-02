@@ -1,0 +1,129 @@
+id: studio.affinity.Affinity
+sdk: org.freedesktop.Sdk
+runtime: org.freedesktop.Platform
+base: org.winehq.Wine
+base-version: wow64-25.08
+runtime-version: "25.08"
+command: affinity
+
+finish-args:
+  - --allow=devel
+  - --allow=multiarch
+  - --allow=per-app-dev-shm
+  - --device=all
+  - --share=network
+  - --share=ipc
+  - --socket=x11
+  - --socket=pulseaudio
+  - --filesystem=home
+  # wineprefix must be outside of the flatpak's read-only file system
+  - --filesystem=home/.var/app/studio.affinity.Affinity/data/wineprefix:create
+  - --env=WINEPREFIX=$HOME/.var/app/studio.affinity.Affinity/data/wineprefix
+  - --env=WINE=/app/bin/wine
+
+build-options:
+  build-args:
+    - --allow=devel
+    - --allow=multiarch
+    - --allow=per-app-dev-shm
+    - --device=all
+    - --share=network
+    - --share=ipc
+    - --socket=x11
+    # wineprefix must be outside of the flatpak's read-only file system
+    - --filesystem=home/.var/app/studio.affinity.Affinity/data/wineprefix:create
+    - --env=WINEPREFIX=$HOME/.var/app/studio.affinity.Affinity/data/wineprefix
+    - --env=WINE=/app/bin/wine
+    # Disable Wine's very verbose logs
+    - --env=WINEDEBUG=-all
+
+modules:
+  - name: ElementalWarriorWine_and_vkd3d
+    buildsystem: simple
+    build-commands:
+      # Overwrite the standard wine with ElementalWarriorWine
+      - tar -xzf ElementalWarriorWine-x86_64.tar.gz --strip-components 1 -C /app
+      # Overwrite with vkd3d dlls
+      - cp x64/*.dll /app/lib/wine/x86_64-windows/
+      - cp x86/*.dll /app/lib/wine/i386-windows/
+    sources:
+      - type: file
+        dest-filename: ElementalWarriorWine-x86_64.tar.gz
+        url: https://github.com/seapear/AffinityOnLinux/releases/download/Legacy/ElementalWarriorWine-x86_64.tar.gz
+        sha256: 8e6dfa335a9cbf773dd0f733abb5f3d80bc69bca4f2e6e22663e021eadb76d03
+      - type: archive
+        url: https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v2.14.1/vkd3d-proton-2.14.1.tar.zst
+        sha256: ac70ccfe01d610b51ca67a0a44e4f24f5da29c665facc0c2faf47e0818d23168
+
+  - name: winetricks_dotnet
+    buildsystem: simple
+    build-options:
+      build-args:
+        # Hide "Wine Mono Installer" since we're installing real dotnet
+        - --env=WINEDLLOVERRIDES=mscoree=n
+    build-commands:
+      - winetricks --unattended dotnet35 dotnet48
+  - name: winetricks_fonts
+    buildsystem: simple
+    build-commands:
+      - winetricks --unattended corefonts tahoma
+  - name: winetricks_vcrun2022
+    buildsystem: simple
+    build-commands:
+      - winetricks --unattended vcrun2022
+  - name: winetricks_msxml
+    buildsystem: simple
+    build-commands:
+      - winetricks --unattended msxml3 msxml6
+  - name: winetricks_vkd3d
+    buildsystem: simple
+    build-commands:
+      - winetricks --unattended vkd3d
+  - name: winetricks_settings
+    buildsystem: simple
+    build-commands:
+      - winetricks --unattended renderer=vulkan theme=dark fontsmooth=rgb autostart_winedbg=disabled
+
+  - name: WinMetadata
+    buildsystem: simple
+    build-commands:
+      - 7zz x WinMetadata.zip -o${WINEPREFIX}/drive_c/windows/system32 -y
+    sources:
+      - type: file
+        dest-filename: WinMetadata.zip
+        url: https://archive.org/download/win-metadata/WinMetadata.zip
+        sha256: 02e5c2896b12675548b6576bcf9e1497e643a0c4f5fdc8ace5c113a554a954a0
+
+  - name: affinity
+    buildsystem: simple
+    build-commands:
+      - wget -q --force-progress "https://downloads.affinity.studio/Affinity%20x64.exe" -O AffinityInstaller.exe
+      - winetricks --unattended win11
+      - wine AffinityInstaller.exe
+
+  - name: copy_dlls
+    buildsystem: simple
+    build-commands:
+      - cp /app/lib/wine/x86_64-windows/d3d12*.dll ${WINEPREFIX}/drive_c/windows/system32/
+      - cp /app/lib/wine/x86_64-windows/d3d12*.dll "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity/"
+    sources:
+      - type: archive
+        url: https://github.com/HansKristian-Work/vkd3d-proton/releases/download/v2.14.1/vkd3d-proton-2.14.1.tar.zst
+        sha256: ac70ccfe01d610b51ca67a0a44e4f24f5da29c665facc0c2faf47e0818d23168
+
+  - name: desktop_integration
+    buildsystem: simple
+    build-commands:
+      - install -Dm644 Affinity-Canva.svg /app/share/icons/hicolor/scalable/apps/studio.affinity.Affinity.svg
+      - install -Dm755 start_affinity.sh /app/bin/affinity
+      - install -Dm644 studio.affinity.Affinity.desktop -t /app/share/applications/
+    sources:
+      - type: file
+        url: https://github.com/seapear/AffinityOnLinux/raw/main/Assets/Icons/Affinity-Canva.svg
+        sha256: 1a0a8ef328a0f715e160e990541deec1e2af78fb21b4de0924830db13fd4a21d
+      - type: file
+        path: assets/studio.affinity.Affinity.desktop
+      - type: script
+        dest-filename: start_affinity.sh
+        commands:
+          - wine "${WINEPREFIX}/drive_c/Program Files/Affinity/Affinity.exe"

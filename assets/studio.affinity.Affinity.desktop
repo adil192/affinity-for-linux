@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+
+Name=Affinity
+Comment=A powerful image editing software.
+Categories=Graphics;
+
+Icon=studio.affinity.Affinity
+Exec=affinity
+Terminal=false
+StartupWMClass=affinity.exe
